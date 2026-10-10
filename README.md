@@ -4,6 +4,7 @@
 
 **A Mac web browser with ads blocked before they load.**
 
+**[Website](https://salahu01.github.io/unadly/)** ·
 **[Download](https://github.com/salahu01/unadly-macos/releases/latest)** ·
 **[Report an ad that got through](https://github.com/salahu01/unadly-macos/issues/new?template=ad-not-blocked.md)**
 
