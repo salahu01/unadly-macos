@@ -1,0 +1,43 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  macos:
+    runs-on: macos-15
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Swift version
+        run: swift --version
+
+      - name: Unit tests
+        run: swift test
+
+      # Universal build + bundle assembly. Catches a missing icon, ad list or broken plist,
+      # none of which `swift build` alone would notice.
+      - name: Build and assemble Unadly.app
+        run: ./tools/bundle.sh release
+
+      - name: Check the bundle is well formed
+        run: |
+          APP=build/Unadly.app
+          test -x "$APP/Contents/MacOS/Unadly"
+          test -f "$APP/Contents/Resources/AppIcon.icns"
+          test -s "$APP/Contents/Resources/adhosts.txt"
+          test -f "$APP/Contents/Resources/PrivacyInfo.xcprivacy"
+          plutil -lint "$APP/Contents/Info.plist"
+          lipo -archs "$APP/Contents/MacOS/Unadly" | grep -q x86_64
+          lipo -archs "$APP/Contents/MacOS/Unadly" | grep -q arm64
+          codesign --verify --strict --verbose=2 "$APP"
+          # deployment target must stay macOS 14 (Sonoma)
+          vtool -show-build "$APP/Contents/MacOS/Unadly" | grep -q "minos 14.0"
